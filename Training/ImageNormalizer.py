@@ -2,8 +2,7 @@ import torch
 from PIL import Image
 import numpy as np
 
-def image_to_tensors(image_path):
-    # Open the image file
+def imageTensors(image_path):
     img = Image.open(image_path)
     
     # Check if the image size is 1000x1000
@@ -29,10 +28,3 @@ def image_to_tensors(image_path):
     bTensor = torch.from_numpy(bNormal).float()
     
     return rTensor, gTensor, bTensor
-
-# Example usage
-image_path = r'C:\Users\endpl\Desktop\GHP\Trainerds\Training\Sized Training Images\sized1.png'
-rTensor, gTensor, bTensor = image_to_tensors(image_path)
-
-#print(f"R Tensor Shape: {rTensor.shape}, R Tensor Size: {rTensor.size}")
-print(rTensor[0][0].item())
