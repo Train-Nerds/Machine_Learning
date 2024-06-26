@@ -4,6 +4,7 @@ from PIL import Image
 import Model1
 from Training import ImageScaler
 from Training import ImageNormalizer
+import RewardAlgorithm
 
 #Path = r"C:\Users\endpl\Desktop\GHP\Trainerds\Training\Unsized Training Images\heightmap.png"
 imgName = "heightmap"
@@ -27,3 +28,5 @@ outputTensor = outputTensor * 255
 array = outputTensor.detach().numpy().astype(np.uint8)
 image = Image.fromarray(array, mode='L')  # 'L' mode is for (8-bit pixels, black and white)
 image.save(f'Trainerds\\Training\\Completed Images\\finished1.png')
+
+print(f"Final Reward:{RewardAlgorithm.calcReward(scaledImage,image)}")
