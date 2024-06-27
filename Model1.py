@@ -1,4 +1,5 @@
 import torch
+from pathlib import Path
 from torch import nn
 
 class MainModel(nn.Module):
@@ -36,3 +37,23 @@ class MainModel(nn.Module):
         #print(f'Deconv: {x.shape}')
         x = x.squeeze()
         return x
+    
+    def saveModel(self,name, folderName="models"):
+        path = Path(folderName)
+        path.mkdir(parents=True,exist_ok=True)
+        name = f"{name}.pth" #.pth or PyTorch State file
+        savePath = path/name
+        print(f"Saving model to: {savePath}")
+        torch.save(self,f=savePath)
+        #for name, param in self.named_parameters():
+        #    print(f"{name}: {param}")
+    
+    def loadModel(self,modelName, folderName="models"):
+        path = Path(folderName)
+        name = f"{modelName}.pth"
+        loadPath = path/name
+        print(f"Opening model from: {loadPath}")
+        self.load_state_dict(torch.load(f=loadPath).state_dict())
+        #for name, param in self.named_parameters():
+        #    print(f"{name}: {param}")
+    
