@@ -1,4 +1,5 @@
 from PIL import Image
+import torch
 
 # Constants for the reward algorithm
 FOUND_CITY_REWARD = 10000
@@ -6,7 +7,7 @@ TRACK_PUNISHMENT = 0.1
 NEW_TRACK_PUNISHMENT = 10
 WATER_PUNISHMENT_MULTIPLIER = 10
 
-def calcReward(iImg, oImg):
+def calcReward(iImg, oImg) -> torch.Tensor:
     cityReward = 0.0
     foundCityReward = 0.0
     trackPunishment = 0.0
@@ -63,4 +64,5 @@ def calcReward(iImg, oImg):
     #print(f"Height Diff Punishment: {totalHeightPunishment}")
     #print(f"Water addition: {waterPunishmentAddition}")
     totalReward = (cityReward + foundCityReward) - (trackPunishment + newTrackPunishment + totalHeightPunishment)
-    return totalReward
+    reward = torch.tensor([totalReward], dtype=torch.float32)
+    return reward
