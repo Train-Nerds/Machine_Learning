@@ -1,6 +1,8 @@
 import torch
 from pathlib import Path
 from torch import nn
+import RewardAlgorithm
+from RewardAlgorithm import calcReward
 
 class MainModel(nn.Module):
     def __init__(self) -> None:
@@ -41,25 +43,25 @@ class MainModel(nn.Module):
         x = x.squeeze()
         return x
     
-    def train_model(model, dataloader, criterion, optimizer, epochs=25):
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        model.to(device)
-        
+    def train_model(self, dataloader, scedStep, scedGamma, printProgress, epochs=25):
+        optimizer = torch.optim.SGD(self.parameters(),lr=0.001)
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scedStep, gamma=scedGamma)
+
         for epoch in range(epochs):
-            model.train()             
-            for inputs, labels in dataloader:
-                inputs, labels = inputs.to(device), labels.to(device)
-                
+            self.train()             
+            for inputs, outputs in dataloader:                
                 optimizer.zero_grad()
-                outputs = model(inputs)
-                loss = criterion(outputs, labels)
+                outputs = self(inputs)
+                loss = calcReward(inputs, outputs)
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+                scheduler.step()
 
-                if (epoch % 2 == 0):
-                    print(f"Loss: {loss}") 
-        return model.eval()
+                percent = (epoch/epochs)*100
+                if (printProgress and (percent % 1 == 0)):
+                    print(f"{percent}%")
+        return self.eval()
 
 
     def saveModel(self,name, folderName="models"):
