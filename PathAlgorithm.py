@@ -54,23 +54,24 @@ def trace_path(cell_details, dest):
 	for i in path:
 		print("->", i, end=" ")
 	print()
+	return(path)
 
 # Implement the A* search algorithm
 def a_star_search(grid, src, dest):
 	# Check if the source and destination are valid
 	if not is_valid(src[0], src[1]) or not is_valid(dest[0], dest[1]):
 		print("Source or destination is invalid")
-		return
+		return(-1)
 
 	# Check if the source and destination are unblocked
 	if not is_unblocked(grid, src[0], src[1]) or not is_unblocked(grid, dest[0], dest[1]):
 		print("Source or the destination is blocked")
-		return
+		return(-1)
 
 	# Check if we are already at the destination
 	if is_destination(src[0], src[1], dest):
 		print("We are already at the destination")
-		return
+		return(-1)
 
 	# Initialize the closed list (visited cells)
 	closed_list = [[False for _ in range(COL)] for _ in range(ROW)]
@@ -118,9 +119,9 @@ def a_star_search(grid, src, dest):
 					cell_details[new_i][new_j].parent_j = j
 					print("The destination cell is found")
 					# Trace and print the path from source to destination
-					trace_path(cell_details, dest)
+					path = trace_path(cell_details, dest)
 					found_dest = True
-					return
+					return(path)
 				else:
 					# Calculate the new f, g, and h values
 					g_new = cell_details[i][j].g + 1.0
@@ -140,28 +141,5 @@ def a_star_search(grid, src, dest):
 
 	# If the destination is not found after visiting all cells
 	if not found_dest:
+		return(-1)
 		print("Failed to find the destination cell")
-
-def main():
-	# Define the grid (1 for unblocked, 0 for blocked)
-	grid = [
-		[1, 0, 1, 1, 1, 1, 0, 1, 1, 1],
-		[1, 1, 1, 0, 1, 1, 1, 0, 1, 1],
-		[1, 1, 1, 0, 1, 1, 0, 1, 0, 1],
-		[0, 0, 1, 0, 1, 0, 0, 0, 0, 1],
-		[1, 1, 1, 0, 1, 1, 1, 0, 1, 0],
-		[1, 0, 1, 1, 1, 1, 0, 1, 0, 0],
-		[1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-		[1, 0, 1, 1, 1, 1, 0, 1, 1, 1],
-		[1, 1, 1, 0, 0, 0, 1, 0, 0, 1]
-	]
-
-	# Define the source and destination
-	src = [8, 0]
-	dest = [0, 0]
-
-	# Run the A* search algorithm
-	a_star_search(grid, src, dest)
-
-if __name__ == "__main__":
-	main()
