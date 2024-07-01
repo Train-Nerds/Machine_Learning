@@ -2,8 +2,9 @@ import noise
 import numpy as np
 from PIL import Image
 import math
-
-
+import heapq
+import random
+from scipy.ndimage import gaussian_filter
 
 def rgb_norm(world):
     world_min = np.min(world)
@@ -17,14 +18,12 @@ def prep_world(world):
     return world
 
 shape = (1024,1024)
-scale = 100
+scale = 200
 octaves = 6
 persistence = 0.5
 lacunarity = 2.0
-seed = np.random.randint(0,100)
-seed = 126
-
-cities = Image.new("L", shape, "black")
+seed = np.random.randint(20,200)
+print(str(seed))
 
 world = np.zeros(shape)
 for i in range(shape[0]):
@@ -51,16 +50,17 @@ for y in range(world.shape[0]):
 # get it between -1 and 1
 max_grad = np.max(circle_grad)
 circle_grad = circle_grad / max_grad
-circle_grad -= 0.5
-circle_grad *= 1.6
+circle_grad -= 0.8
+circle_grad *= 1.2
 circle_grad = -circle_grad
 
 world_noise = np.zeros_like(world)
 
 for i in range(shape[0]):
     for j in range(shape[1]):
-        if circle_grad[i][j]>0:
-            world_noise[i][j] = (world[i][j] * circle_grad[i][j])
+        #if circle_grad[i][j] > 0:
+        world_noise[i][j] = (world[i][j] * circle_grad[i][j])
+print("Terrain Generated!")
 
 lightblue = [0,191,255]
 blue = [65,105,225]
@@ -71,26 +71,32 @@ beach = [238, 214, 175]
 snow = [255, 250, 250]
 mountain = [139, 137, 137]
 
-threshold = 19
+threshold = 50
 
-def add_color2(world):
+def add_color2(informationMap):
     color_world = np.zeros(world.shape+(3,))
     for i in range(shape[0]):
         for j in range(shape[1]):
-            if world[i][j] < threshold + 100:
+            if informationMap.getpixel((i, j))[0] < threshold + 55 or informationMap.getpixel((i, j))[2] > 0:
                 color_world[i][j] = blue
-            elif world[i][j] < threshold + 102:
+            elif informationMap.getpixel((i, j))[0] < threshold + 57:
                 color_world[i][j] = beach
-            elif world[i][j] < threshold + 104:
+            elif informationMap.getpixel((i, j))[0] < threshold + 60:
                 color_world[i][j] = sandy
-            elif world[i][j] < threshold + 115:
+            elif informationMap.getpixel((i, j))[0] < threshold + 80:
                 color_world[i][j] = green
-            elif world[i][j] < threshold + 130:
+            elif informationMap.getpixel((i, j))[0] < threshold + 110:
                 color_world[i][j] = darkgreen
-            elif world[i][j] < threshold + 137:
+            elif informationMap.getpixel((i, j))[0] < threshold + 135:
                 color_world[i][j] = mountain
+
             else:
-                color_world[i][j] = snow
+                color_world[i][j] = snow            
+                
+            if informationMap.getpixel((i, j))[1] > 0:
+                value = informationMap.getpixel((i, j))[1]
+                color_world[i][j] = [value, value, value]
+                
 
     return color_world
 
@@ -99,19 +105,159 @@ def prepareChannel(world):
     color_world = np.zeros(world.shape+(3,))
     for i in range(shape[0]):
         for j in range(shape[1]):
-            if world[i][j] < threshold + 100:
-                color_world[i][j] = threshold
+            if world[i][j] < threshold:
+                color_world[i][j] = 0
             else:
                 color_world[i][j] = world[i][j]
 
                 
     return color_world
-                
-island_world_grad = add_color2(prep_world(world_noise)).astype(np.uint8)
-Image.fromarray(island_world_grad).save("coloredTerrain.png")
+           
+def a_star_pathfinding(terrain, start, goal):
+    def heuristic(a, b):
+        return np.linalg.norm(np.array(a) - np.array(b))
+    
+    def get_neighbors(pos):
+        x, y = pos
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Four possible directions: up, down, left, right
+        neighbors = [(x + dx, y + dy) for dx, dy in directions]
+        valid_neighbors = [(nx, ny) for nx, ny in neighbors if 0 <= nx < len(terrain) and 0 <= ny < len(terrain[0])]
+        return valid_neighbors
+    
+    open_list = []
+    heapq.heappush(open_list, (0, start))
+    came_from = {}
+    g_score = {start: 0}
+    f_score = {start: heuristic(start, goal)}
+    
+    while open_list:
+        _, current = heapq.heappop(open_list)
+        
+        if current == goal:
+            path = []
+            while current in came_from:
+                path.append(current)
+                current = came_from[current]
+            path.append(start)
+            return path[::-1]  # Return reversed path
+        
+        for neighbor in get_neighbors(current):
+            tentative_g_score = g_score[current] + (terrain[neighbor[1], neighbor[0]] - terrain[current[1], current[0]])**2
+            if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
+                came_from[neighbor] = current
+                g_score[neighbor] = tentative_g_score
+                f_score[neighbor] = g_score[neighbor] + heuristic(neighbor, goal)
+                if neighbor not in [i[1] for i in open_list]:
+                    heapq.heappush(open_list, (f_score[neighbor], neighbor))
+    
+    return []
+
+def generate_rivers(terrain, num_rivers, river_threshold):
+    print("Generating Rivers...")
+    height, width = terrain.shape
+    rivers = np.zeros_like(terrain)
+    high_points = [(x, y) for x in range(width) for y in range(height) if terrain[y, x] > river_threshold]
+    
+    # Function to find the nearest low point for a river to flow to
+    def find_goal(start):
+        for r in range(1, max(width, height)):
+            for dy in range(-r, r+1):
+                for dx in range(-r, r+1):
+                    nx, ny = start[0] + dx, start[1] + dy
+                    if 0 <= nx < width and 0 <= ny < height and terrain[ny, nx] < -0.15:
+                        return (nx, ny)
+        return None
+    
+    for _ in range(num_rivers):
+        if not high_points:
+            break
+        start = random.choice(high_points)
+        goal = find_goal(start)
+        if not goal:
+            continue
+        
+        path = a_star_pathfinding(terrain, start, goal)
+        for x, y in path:
+            rivers[y, x] = 255  # Mark the river in the blue channel
+            #print("River grew!")
+    
+    return rivers
+
+def generate_population(terrain, rivers, num_clusters, growth_steps, growth_probability):
+    print("Generating Population...")
+    height, width = terrain.shape
+    population = np.zeros((height, width))
+    
+    i = 0
+    for _ in range(num_clusters):
+        print("Creating population cluster")
+        while True:
+            print("Choosing a cluster")
+            # Randomly choose a center for the cluster
+            center_x = random.randint(0, width - 1)
+            center_y = random.randint(0, height - 1)
+            
+            # i += 1
+            # print(str(i) + ". Terrain Coord: " + str(terrain[center_y, center_x]))
+            # Check if the chosen point is suitable for a city (near but not on a river and mid-elevation)
+            if terrain[center_y, center_x] > 0 and terrain[center_y, center_x] < 0.1:
+                print("Calculating city river proximity...")
+                river_proximity = np.min([np.sqrt((center_x - rx)**2 + (center_y - ry)**2) for ry, rx in zip(*np.where(rivers == 255))])
+                print("River proximity calculated!")
+                if 5 < river_proximity < 50 or 0.02 > random.random():  # The city is between 5 and 50 pixels away from a river
+                    break
+        
+        # Grow the city from the chosen starting point
+        grow_city(population, center_x, center_y, terrain, rivers, growth_steps, growth_probability)
+    
+    print("Population generated!")
+    return gaussian_filter(population, sigma=2)
+
+def grow_city(city, start_x, start_y, terrain, rivers, growth_steps, growth_probability):
+    print("Grow city,..")
+    height, width = terrain.shape
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  # Four possible directions: up, down, left, right
+    
+    def valid_location(x, y):
+        return (0 <= x < width and 0 <= y < height and
+                terrain[y, x] > 0 and terrain[y, x] < 0.1 and
+                city[y, x] == 0 and rivers[y, x] == 0)
+    
+    city[start_y, start_x] = 255  # Start the city at the given point
+    frontier = [(start_x, start_y)]
+    
+    for _ in range(growth_steps):
+        if not frontier:
+            break
+        
+        # Choose a random point from the frontier to grow from
+        x, y = random.choice(frontier)
+        
+        # Try to grow the city in each direction with a certain probability
+        for dx, dy in directions:
+            if random.random() < growth_probability:
+                nx, ny = x + dx, y + dy
+                if valid_location(nx, ny):
+                    city[ny, nx] = 255
+                    print("City grew!")
+                    frontier.append((nx, ny))
+        
+        # Remove the point from the frontier to prevent regrowth
+        frontier.remove((x, y))
+
+
+     
+rivers = generate_rivers(world_noise.copy(), 20, .1)
+population = generate_population(world_noise.copy(), rivers, 3, 100, 0.9).astype(np.uint8)
 
 heightmap_grad = prepareChannel(prep_world(world_noise)).astype(np.uint8)
 heightmap = Image.fromarray(heightmap_grad)
+rivermap = Image.fromarray(rivers.astype(np.uint8))
+rivermap.save("rivermap.png")
+populationMap = Image.fromarray(population.astype(np.uint8))
+populationMap.save("populationmap.png")
 heightmap = heightmap.convert("L")
-heightmap = Image.merge("RGB", (heightmap, cities, Image.new("L", shape, "black")))
-heightmap.save("heightmapR.png")
+informationMap = Image.merge("RGB", (heightmap, populationMap, rivermap))
+informationMap.save("heightmapR.png")
+informationMap.show()
+Image.fromarray(add_color2(informationMap).astype(np.uint8)).show()
