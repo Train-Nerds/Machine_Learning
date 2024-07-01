@@ -177,7 +177,6 @@ def generate_rivers(terrain, num_rivers, river_threshold):
             continue
         
         path = a_star_pathfinding(terrain, start, goal)
-        riverWidth = 20
         for x, y in path:
             rivers[y, x] = 255  # Mark the river in the blue channel
             #print("River grew!")
