@@ -14,7 +14,7 @@ class Reward_Function():
 
     def __init__():
         pass
-    def __init__(rewardModifier: float, waterLevel: int, cityColor: int):
+    def __init__(self, rewardModifier: float, waterLevel: int, cityColor: int):
         self.cityColor = cityColor
         self.waterLevel = waterLevel
         self.rewardModifier = rewardModifier    
@@ -51,7 +51,7 @@ class Reward_Function():
                 trainMap_As_Binary += [0]
             else:
                 trainMap_As_Binary += [1]
-        grid = [trainMap_As_Binary[row:row + self.imageWidth] for row in range(self.imageHeight-1)]
+        grid = [trainMap_As_Binary[trainMap_As_Binary[x+y] for x in range(self.imageWidth-1)] for y in range(self.imageHeight-1)]
            
         
 
@@ -59,14 +59,14 @@ class Reward_Function():
         PathAlgorithm.a_star_search()
         pass
 
-    def reward_Calculator(inputImage: Image, outputRailImage: Image):
+    def reward_Calculator(self, inputImage: Image, outputRailImage: Image):
         self.inputImage = list(inputImage.getdata())
         self.outputRailImage = list(outputRailImage.getdata())
 
-        cost = cost_Calculator()
-        value = value_Calculator()
-        efficiency = efficiency_Calculator()
-        reward = None
+        cost = self.cost_Calculator()
+        value = self.value_Calculator()
+        efficiency = self.efficiency_Calculator()
+        reward = pow(self.rewardModifier, value)/efficiency-cost
 
         cost_Calculator()
 
