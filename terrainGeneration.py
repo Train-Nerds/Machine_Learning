@@ -211,7 +211,7 @@ def generate_population(terrain, rivers, num_clusters, growth_steps, growth_prob
         grow_city(population, center_x, center_y, terrain, rivers, growth_steps, growth_probability)
     
     print("Population generated!")
-    return gaussian_filter(population, sigma=2)
+    return gaussian_filter(population, sigma=4)
 
 def grow_city(city, start_x, start_y, terrain, rivers, growth_steps, growth_probability):
     print("Grow city,..")
