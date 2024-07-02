@@ -6,6 +6,7 @@ import heapq
 import random
 from scipy.ndimage import gaussian_filter # type: ignore
 import uuid
+import sys
 
 def add_color2(informationMap):
     color_world = np.zeros(world.shape+(3,))
@@ -203,7 +204,8 @@ scale = 200
 octaves = 6
 persistence = 0.5
 lacunarity = 2.0
-seed = np.random.randint(20,200)
+seed = int(sys.argv[1])
+print(seed)
 world = np.zeros(shape)
 for i in range(shape[0]):
     for j in range(shape[1]):
@@ -255,8 +257,6 @@ populationMap = Image.fromarray(population.astype(np.uint8))
 #populationMap.save("populationmap.png")
 heightmap = heightmap.convert("L")
 informationMap = Image.merge("RGB", (heightmap, populationMap, rivermap))
-id = uuid.uuid4()
-informationMap.save(f"tsgi_{id}.png")
-print(id)
+informationMap.save(f"tsgi_{seed}.png")
 #informationMap.show()
 #Image.fromarray(add_color2(informationMap).astype(np.uint8)).show()
