@@ -8,7 +8,7 @@ IMAGES_PER_COMPUTER = IMAGES // COMPUTERS
 THREADS = 10 # Don't use green threads, use real cores (hyperthreading counts as real cores).
 IMAGES_PER_THREAD = IMAGES_PER_COMPUTER // THREADS
 
-COMPUTER = 0 # Start counting at 0, so we go [0, 1, 2, 3].
+COMPUTER = 2 # Start counting at 0, so we go [0, 1, 2, 3].
 
 def work(t):
     print(f"Started work on {t}.")
