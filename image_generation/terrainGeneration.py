@@ -198,7 +198,7 @@ def prep_world(world):
 
 
 
-shape = (1024,1024)
+shape = (1000,1000)
 scale = 200
 octaves = 6
 persistence = 0.5
@@ -212,8 +212,8 @@ for i in range(shape[0]):
                                     octaves=octaves, 
                                     persistence=persistence, 
                                     lacunarity=lacunarity, 
-                                    repeatx=1024, 
-                                    repeaty=1024, 
+                                    repeatx=1000, 
+                                    repeaty=1000, 
                                     base=seed)
         
 center_x, center_y = shape[1] // 2, shape[0] // 2
