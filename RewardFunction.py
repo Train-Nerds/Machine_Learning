@@ -119,7 +119,7 @@ class Reward_Function():
 
 
         value, efficiency = self.efficiency_Value_Calculator()
-        reward = (self.rewardModifier*value)-(efficiency+cost)
+        reward = pow((self.rewardModifier*value), 2)-(efficiency+cost)
         print(pow(self.rewardModifier, value))
         
         print('Reward Modifier: ' + str(self.rewardModifier))
