@@ -87,7 +87,7 @@ def a_star_pathfinding(terrain, start, goal):
     return []
 
 def generate_rivers(terrain, num_rivers, river_threshold):
-    print("Generating Rivers...")
+    #print("Generating Rivers...")
     height, width = terrain.shape
     rivers = np.zeros_like(terrain)
     high_points = [(x, y) for x in range(width) for y in range(height) if terrain[y, x] > river_threshold]
@@ -123,7 +123,7 @@ def generate_rivers(terrain, num_rivers, river_threshold):
     return rivers
 
 def generate_population(terrain, rivers, num_clusters, growth_steps, growth_probability):
-    print("Generating Population...")
+    #print("Generating Population...")
     height, width = terrain.shape
     population = np.zeros((height, width))
     
@@ -235,7 +235,7 @@ for i in range(shape[0]):
     for j in range(shape[1]):
         #if circle_grad[i][j] > 0:
         world_noise[i][j] = (world[i][j] * circle_grad[i][j])
-print("Terrain Generated!")
+#print("Terrain Generated!")
 lightblue = [0,191,255]
 blue = [65,105,225]
 green = [34,139,34]
@@ -255,6 +255,8 @@ populationMap = Image.fromarray(population.astype(np.uint8))
 #populationMap.save("populationmap.png")
 heightmap = heightmap.convert("L")
 informationMap = Image.merge("RGB", (heightmap, populationMap, rivermap))
-informationMap.save(f"{uuid.uuid4()}.png")
+id = uuid.uuid4()
+informationMap.save(f"{uuid}.png")
+print(uuid)
 #informationMap.show()
 #Image.fromarray(add_color2(informationMap).astype(np.uint8)).show()
