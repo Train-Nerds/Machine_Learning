@@ -11,8 +11,8 @@ class Cell:
 		self.h = 0 # Heuristic cost from this cell to destination
 
 # Define the size of the grid
-ROW = 9
-COL = 10
+ROW = 1000
+COL = 1000
 
 # Check if a cell is valid (within the grid)
 def is_valid(row, col):
@@ -32,7 +32,7 @@ def calculate_h_value(row, col, dest):
 
 # Trace the path from source to destination
 def trace_path(cell_details, dest):
-	print("The Path is ")
+	#print("The Path is ")
 	path = []
 	row = dest[0]
 	col = dest[1]
@@ -51,9 +51,9 @@ def trace_path(cell_details, dest):
 	path.reverse()
 
 	# Print the path
-	for i in path:
-		print("->", i, end=" ")
-	print()
+	#for i in path:
+	#	print("->", i, end=" ")
+	#print()
 	return(path)
 
 # Implement the A* search algorithm
@@ -66,8 +66,8 @@ def a_star_search(grid, src, dest):
 
 	# Check if the source and destination are unblocked
 	if not is_unblocked(grid, src[0], src[1]) or not is_unblocked(grid, dest[0], dest[1]):
-		#print("Source or the destination is blocked: " + str(grid[src[0]][src[1]]) + str(grid[dest[0]][dest[1]]))
-		#return(-1)
+		print("Source or the destination is blocked: " + str(grid[src[0]][src[1]]) + str(grid[dest[0]][dest[1]]))
+		return(-1)
 		pass
 
 	# Check if we are already at the destination
@@ -123,7 +123,7 @@ def a_star_search(grid, src, dest):
 					# Trace and print the path from source to destination
 					path = trace_path(cell_details, dest)
 					found_dest = True
-					return(path)
+					return(len(path))
 				else:
 					# Calculate the new f, g, and h values
 					g_new = cell_details[i][j].g + 1.0
