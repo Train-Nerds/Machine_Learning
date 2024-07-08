@@ -1,7 +1,7 @@
 import torch
 import Training.ImageNormalizer
-from Reward import PathAlgorithm
-from Reward import RewardAlgorithm
+from Reward import NewRewardAlg
+#from Reward import RewardAlgorithm
 from Reward import RewardFunction
 from pathlib import Path
 from torch import nn
@@ -61,13 +61,13 @@ class MainModel(nn.Module):
         #print(f'Deconv: {x.shape}')
         x = x.squeeze()
         return x
-    
-    def trainModel(self, inputFolderPath, scedStep=10000, scedGamma=0.1, 
+
+    def trainModel(self, inputFolderPath, trainingFolderPath, learningRate=0.1,scedStep=10000, scedGamma=0.1, 
                    printProgress=True, printLoss=False, epochs=25, device=torch.device('cpu') ) -> None:
         # Function to train the given model
-
+        loss_fn = nn.BCEWithLogitsLoss() 
         # Optimizer to change values
-        optimizer = torch.optim.Adam(self.parameters(),lr=0.001)
+        optimizer = torch.optim.Adam(self.parameters(),lr=learningRate)
         # Scheduler to change learning rate
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scedStep, gamma=scedGamma)
         # For each training cycle
@@ -75,26 +75,28 @@ class MainModel(nn.Module):
             # Loop through all files in the directory
             for imgName in os.listdir(inputFolderPath):
                 filepath = os.path.join(inputFolderPath, imgName)
-                with Image.open(filepath) as image:
-                    # Convert given image to tensor
-                    input = Training.ImageNormalizer.imageToTensor(image).to(device)
-
-                    self.train()
-                    outputTensor = self(input)
-                    outputTensor.cpu()
-                    output = outputToImage(outputTensor)
-                    rewardFunction = RewardFunction.Reward_Function(30000, 100) # RewardModifier, waterLevel
-                    print("Initialized Reward Function")
-                    loss = rewardFunction.reward_Calculator(image, output)
-                    print("Rewarded 1")
-                    print(loss)
-                    # Avoid stacking gradients
-                    optimizer.zero_grad()
-                    # Backwards prop to determine how to change values
-                    loss.backward()
-                    # Step the optimizer and scheduler to make values more precise and avoid overshoot
-                    optimizer.step()
-                    scheduler.step()
+                filePath2 = os.path.join(trainingFolderPath,imgName)
+                image = Image.open(filepath)
+                train = Image.open(filePath2)
+                # Convert given image to tensor
+                input = Training.ImageNormalizer.imageToTensor(image).to(device)
+                idealTensor = Training.ImageNormalizer.railImageToTensor(train).to(device)
+                self.train()
+                outputTensor = self(input)
+                #outputTensor.cpu()
+                #output = outputToImage(outputTensor)
+                #print("Initialized Reward Function")
+                #loss = rewardFunction.reward_Calculator(image, outputTensor)
+                loss = loss_fn(outputTensor,idealTensor)
+                #print("Rewarded")
+                print(f"Loss:{loss}")
+                # Avoid stacking gradients
+                optimizer.zero_grad()
+                # Backwards prop to determine how to change values
+                loss.backward()
+                # Step the optimizer and scheduler to make values more precise and avoid overshoot
+                optimizer.step()
+                scheduler.step()
 
             # Print progress when desired
             percent = (epoch/epochs)*100
