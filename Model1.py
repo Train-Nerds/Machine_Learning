@@ -63,49 +63,62 @@ class MainModel(nn.Module):
         return x
 
     def trainModel(self, inputFolderPath, trainingFolderPath, learningRate=0.1,scedStep=10000, scedGamma=0.1, 
-                   printProgress=True, printLoss=False, epochs=25, device=torch.device('cpu') ) -> None:
-        # Function to train the given model
+                   printProgress=True, printLoss=False, epochs=25, device=torch.device('cpu'), saveModel=False ) -> None:
+        # Define loss function, optimizer, and scheduler
         loss_fn = nn.BCEWithLogitsLoss() 
-        # Optimizer to change values
         optimizer = torch.optim.Adam(self.parameters(),lr=learningRate)
-        # Scheduler to change learning rate
+        #scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,mode='min', factor=scedGamma, patience=scedStep, verbose=verboseSced)
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=scedStep, gamma=scedGamma)
+
         # For each training cycle
         for epoch in range(epochs): # Each epoch is a full folder passthrough
+
+            loss = 0
             # Loop through all files in the directory
             for imgName in os.listdir(inputFolderPath):
+                # Define file paths for input and ideal images
                 filepath = os.path.join(inputFolderPath, imgName)
                 filePath2 = os.path.join(trainingFolderPath,imgName)
+
+                # Open the images as a PIL Image object
                 image = Image.open(filepath)
                 train = Image.open(filePath2)
-                # Convert given image to tensor
+
+                # Convert given images to tensors
                 input = Training.ImageNormalizer.imageToTensor(image).to(device)
                 idealTensor = Training.ImageNormalizer.railImageToTensor(train).to(device)
+
+                # Set model to training mode
                 self.train()
+
+                # Pass through model
                 outputTensor = self(input)
-                #outputTensor.cpu()
-                #output = outputToImage(outputTensor)
-                #print("Initialized Reward Function")
-                #loss = rewardFunction.reward_Calculator(image, outputTensor)
+
+                # Calculate loss
                 loss = loss_fn(outputTensor,idealTensor)
-                #print("Rewarded")
-                print(f"Loss:{loss}")
+
                 # Avoid stacking gradients
                 optimizer.zero_grad()
+
                 # Backwards prop to determine how to change values
                 loss.backward()
+
                 # Step the optimizer and scheduler to make values more precise and avoid overshoot
                 optimizer.step()
                 scheduler.step()
 
             # Print progress when desired
             percent = (epoch/epochs)*100
-            #if (percent % 1 == 0):
-            if ( True ):
+            if (percent % 1 == 0):
                 if ( printProgress ):
                     print(f"{percent}%")
                 if ( printLoss ):
                     print(f"Loss: {loss.item()}")
+                if ( saveModel ):
+                    self.saveModel("TrainedModel1")
+                    # Save model twice to avoid a save being interupted
+                    self.saveModel("TrainedModelBackup")
+                    print("Saved model")
         
         print("Training Complete")
         return
@@ -133,3 +146,10 @@ class MainModel(nn.Module):
         #for name, param in self.named_parameters():
         #    print(f"{name}: {param}")
     
+    def loadModelFromPath(self,modelPath) -> None:
+        # Loads a saved model as defined in saveModel from a full path
+
+        print(f"Opening model from: {modelPath}")
+        self.load_state_dict(torch.load(f=modelPath).state_dict())
+        #for name, param in self.named_parameters():
+        #    print(f"{name}: {param}")
