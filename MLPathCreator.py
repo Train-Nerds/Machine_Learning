@@ -1,8 +1,9 @@
 import torch
 import numpy as np
 from PIL import Image
-from Training import ImageNormalizer
 import Model1
+
+# Changed to have ImageNormalizer functions within file
 
 DEFAULT_MODEL_PATH = r'C:\Users\endpl\Desktop\GHP\Trainerds\models\TrainedModel1.pth'
 
@@ -20,7 +21,7 @@ def generateTerrain(inputImage: Image, loadedModelPath = "default") -> Image:
     ml.loadModelFromPath(loadedModelPath)
     
     # Set up Tensors
-    trainingTensor = ImageNormalizer.imageToTensor(input).to(CURRENT_DEVICE)
+    trainingTensor = imageToTensor(inputImage).to(CURRENT_DEVICE)
 
     # Forward Pass
     outputTensor = ml(trainingTensor)
@@ -50,3 +51,47 @@ def printParams(model) -> None:
     # Print each of the model's tensor parameters
     for name, param in model.named_parameters():
                 print(f"{name}: {param}")
+
+def imageToTensor(img) -> torch.Tensor:
+    # Convert a 1000x1000 image's R, G, and B channels into a float tensor with values between 0 and 1
+
+    # Check if the image size is 1000x1000
+    if img.size!= (1000, 1000):
+        raise ValueError("Image dimensions must be 1000x1000.")
+    
+    # Convert the image data to numpy arrays
+    rgbData = np.array(img.convert('RGB'))
+    
+    # Normalize values bteween 0 and 1 for better training accuracy
+    normalizedRgbData = rgbData[:, :, :] / 255.0
+
+    rgbTensor = torch.from_numpy(normalizedRgbData).float().permute(2,0,1) # Permute to convert to Channel, height, width format for AI
+    
+    return rgbTensor
+
+def railImageToTensor(img) -> torch.Tensor:
+    # Convert a 1000x1000 image's R, G, and B channels into a float tensor with values between 0 and 1
+
+    # Check if the image size is 1000x1000
+    if img.size!= (1000, 1000):
+        raise ValueError("Image dimensions must be 1000x1000.")
+    
+    # Convert the image data to numpy arrays
+    grayData = np.array(img.convert('L'))
+    
+    # Normalize values bteween 0 and 1 for better training accuracy
+    normalizedGrayData = grayData[:, :] / 255.0
+
+    grayTensor = torch.from_numpy(normalizedGrayData).float().permute(0,1) # Permute to convert height, width
+    
+    return grayTensor
+
+def imageToTensorFromPath(imagePath) -> torch.Tensor:
+    # Run imageToTensor with a specified path
+    
+    # Open the image file
+    img = Image.open(imagePath)
+    
+    rgbTensor = imageToTensor(img)
+    
+    return rgbTensor
